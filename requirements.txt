@@ -1,4 +1,4 @@
-annotated-types==0.6.0
+annotated-types==0.6.1
 anyio==4.2.0
 beautifulsoup4==4.12.2
 blinker==1.9.0
