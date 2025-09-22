@@ -1,4 +1,5 @@
-Hypertension Prediction Project 🩺OBJECTIVE 🎯
+Hypertension Prediction Project 🩺
+OBJECTIVE 🎯
 The primary goal of this project is to develop and deploy a user-friendly machine learning web application that predicts an individual's likelihood of having hypertension based on key health metrics.
 
 💡 How it Works
