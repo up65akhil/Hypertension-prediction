@@ -1,33 +1,30 @@
-Hypertension Prediction Project 🩺
+# 🫀 Hypertension Risk Prediction Engine
 
-OBJECTIVE 🎯
-The primary goal of this project is to develop and deploy a user-friendly machine learning web application that predicts an individual's likelihood of having hypertension based on key health metrics.
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Scikit--Learn%20%7C%20XGBoost-orange.svg)]()
+[![Healthcare AI](https://img.shields.io/badge/Healthcare-Predictive%20Analytics-red.svg)]()
 
-💡 How it Works
-Enter your health stats in the web form.
+An end-to-end Machine Learning pipeline designed to predict the risk of hypertension (high blood pressure) in patients based on their medical history and physiological data. This project bridges the gap between raw healthcare data and actionable clinical insights through predictive modeling and an interactive web interface.
 
-The app sends your data to a Python backend.
+## 🌟 Key Features
+* **Clinical Data Preprocessing:** Handles missing values, outliers, and scales physiological metrics (like BMI, glucose levels, and heart rate) for optimal model performance.
+* **Exploratory Data Analysis (EDA):** Deep dive into feature correlations to understand which health indicators most strongly drive hypertension risk.
+* **Predictive Modeling:** Compares several algorithms (e.g., Logistic Regression, Random Forest, XGBoost) to find the most reliable predictor.
+* **Web Application:** A clean, interactive front-end where a user can input health metrics and receive an instant hypertension risk assessment.
 
-The backend uses a trained machine learning model (hypertention.pkl) to make a prediction.
+## 🛠️ Tech Stack
+* **Language:** Python
+* **Data Processing:** Pandas, NumPy
+* **Machine Learning:** Scikit-Learn, XGBoost/LightGBM
+* **Deployment:** Streamlit / Flask
+* **Data Visualization:** Matplotlib, Seaborn, Plotly
 
-You get an instant result: "High risk" or "Low risk."
+## 📊 Dataset
+The model was trained on the [Insert Dataset Name, e.g., Kaggle Hypertension Dataset / NHANES], which includes patient records with features such as `Age`, `BMI`, `Smoking_Status`, `Blood_Pressure`, and `Cholesterol_Levels`. 
 
-💻 GET START
-Clone the repo: git clone your-repo-link 🔗
+## ⚙️ Installation & Setup
 
-Install dependencies: pip install -r requirements.txt 📦
-
-Run the app: python app.py ▶️
-
-Open in browser: http://127.0.0.1:5000 🌐
-
-📁 PROJECT FILES
-app.py: The heart of the app ❤️
-
-hypertention.pkl: The trained model brain 🧠
-
-templates/index.html: The user interface ✨
-
-requirements.txt: All the libraries you need. ✅
-
-Happy predicting! 😊
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/up65akhil/Hypertension-prediction.git](https://github.com/up65akhil/Hypertension-prediction.git)
+   cd Hypertension-prediction
