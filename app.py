@@ -1,96 +1,144 @@
+import streamlit as st
 import pandas as pd
 import pickle
-import mimetypes
-from flask import Flask, request, render_template
+import os
 from sklearn.preprocessing import LabelEncoder
 
-# Fix for Windows ignoring CSS files
-mimetypes.add_type('text/css', '.css')
+st.set_page_config(page_title="Hypertension Diagnostic System", page_icon="🩺", layout="wide")
 
-app = Flask(__name__)
-
-# --- 1. Load Model and Data ---
-try:
-    with open('hypertention.pkl', 'rb') as file:
-        model = pickle.load(file)
-    df = pd.read_csv('hypertension_dataset.csv')
-except Exception as e:
-    print(f"Error loading files: {e}")
-    exit()
-
-# --- 2. Setup Encoders and Dropdown Options ---
-categorical_cols = ['BP_History', 'Medication', 'Family_History', 'Exercise_Level', 'Smoking_Status']
-label_encoders = {}
-
-for col in categorical_cols:
-    le = LabelEncoder()
-    le.fit(df[col].unique())
-    label_encoders[col] = le
-
-options = {
-    'bp_history_options': df['BP_History'].unique().tolist(),
-    'medication_options': df['Medication'].unique().tolist(),
-    'family_history_options': df['Family_History'].unique().tolist(),
-    'exercise_level_options': df['Exercise_Level'].unique().tolist(),
-    'smoking_status_options': df['Smoking_Status'].unique().tolist()
-}
-
-# --- 3. App Routes ---
-@app.route('/')
-def home():
-    # Load the page with no background alerts
-    return render_template('index.html', bg_status='', **options)
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = request.form.to_dict()
-    processed_input = {}
-
-    try:
-        # Process Numerical Inputs
-        processed_input['Age'] = int(data['Age'])
-        processed_input['Salt_Intake'] = float(data['Salt_Intake'])
-        processed_input['Stress_Score'] = int(data['Stress_Score'])
-        processed_input['Sleep_Duration'] = float(data['Sleep_Duration'])
-        processed_input['BMI'] = float(data['BMI'])
-
-        # Process Categorical Inputs
-        mapping = {
-            'BP_History': 'bp_History',
-            'Medication': 'medication',
-            'Family_History': 'Family_History',
-            'Exercise_Level': 'exercise_Level',
-            'Smoking_Status': 'Smoking_Status'
+st.markdown("""
+    <style>
+        .alert-overlay {
+            position: fixed;
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
         }
+        .blink-red { animation: redSiren 1.5s infinite ease-in-out; }
+        .blink-green { animation: greenSiren 1.5s infinite ease-in-out; }
+        @keyframes redSiren {
+            0% { box-shadow: inset 0 0 0px 0px rgba(255, 0, 0, 0); }
+            50% { box-shadow: inset 0 0 120px 40px rgba(220, 53, 69, 0.9); }
+            100% { box-shadow: inset 0 0 0px 0px rgba(255, 0, 0, 0); }
+        }
+        @keyframes greenSiren {
+            0% { box-shadow: inset 0 0 0px 0px rgba(0, 255, 0, 0); }
+            50% { box-shadow: inset 0 0 120px 40px rgba(40, 167, 69, 0.9); }
+            100% { box-shadow: inset 0 0 0px 0px rgba(0, 255, 0, 0); }
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-        for form_key, model_key in mapping.items():
-            processed_input[model_key] = label_encoders[form_key].transform([data[form_key]])[0]
+if os.path.exists('static/style.css'):
+    with open('static/style.css', 'r') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+elif os.path.exists('style.css'):
+    with open('style.css', 'r') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-        # Order Features exactly as the model expects
-        expected_features = [
-            'Age', 'Salt_Intake', 'Stress_Score', 'Sleep_Duration', 'BMI',
-            'Family_History', 'Smoking_Status', 'bp_History', 'medication', 'exercise_Level'
-        ]
-        
-        input_values = [processed_input[f] for f in expected_features]
-        input_df = pd.DataFrame([input_values], columns=expected_features)
-
-        # Make Prediction
-        prediction = model.predict(input_df)[0]
-        
-        # Determine Color Theme and Text
-        if prediction == 1:
-            prediction_text = "Diagnostic Alert: Patient is likely to have Hypertension."
-            bg_status = "danger-bg" # Triggers Red Siren
-        else:
-            prediction_text = "Diagnostic Clear: Patient is not likely to have Hypertension."
-            bg_status = "safe-bg" # Triggers Green Siren
-        
-        return render_template('index.html', prediction_text=prediction_text, bg_status=bg_status, **options)
-
+@st.cache_resource
+def load_assets():
+    try:
+        with open('hypertention.pkl', 'rb') as file:
+            model = pickle.load(file)
+        df = pd.read_csv('hypertension_dataset.csv')
+        return model, df
     except Exception as e:
-        error_message = f"Error processing input: {str(e)}"
-        return render_template('index.html', error_message=error_message, bg_status='', **options)
+        st.error(f"Error loading files: {e}")
+        st.stop()
 
-if __name__ == '__main__':
-    app.run(debug=True)
+model, df = load_assets()
+
+@st.cache_data
+def setup_encoders(_dataframe):
+    categorical_cols = ['BP_History', 'Medication', 'Family_History', 'Exercise_Level', 'Smoking_Status']
+    label_encoders = {}
+    options = {}
+    for col in categorical_cols:
+        le = LabelEncoder()
+        le.fit(_dataframe[col].unique())
+        label_encoders[col] = le
+        options[col] = _dataframe[col].unique().tolist()
+    return label_encoders, options
+
+label_encoders, options = setup_encoders(df)
+
+with st.sidebar:
+    st.title("Clinical Tool")
+    st.divider()
+    st.warning("**Disclaimer:** This tool provides a preliminary AI-assisted risk assessment. It does not substitute professional medical diagnosis.")
+    st.info("Ensure all patient vitals are accurately measured before running the diagnostic analysis.")
+
+st.title("🩺 Hypertension Risk Assessment")
+st.markdown("Please input the patient's current vitals and medical history below.")
+st.divider()
+
+col1, col2 = st.columns([2, 1], gap="large")
+
+with col1:
+    with st.form("diagnostic_form"):
+        st.subheader("Patient Vitals & History")
+        
+        vitals_col, lifestyle_col, history_col = st.columns(3)
+        
+        with vitals_col:
+            st.markdown("**Biometrics**")
+            age = st.number_input("Patient Age", min_value=0, step=1, value=30)
+            bmi = st.number_input("BMI (kg/m²)", min_value=0.0, step=0.1, value=22.5)
+            sleep_duration = st.number_input("Sleep Duration (Hrs)", min_value=0.0, step=0.1, value=7.0)
+            
+        with lifestyle_col:
+            st.markdown("**Lifestyle Factors**")
+            salt_intake = st.number_input("Salt Intake (g/day)", min_value=0.0, step=0.1, value=5.0)
+            stress_score = st.number_input("Stress Score (0-10)", min_value=0, max_value=10, step=1, value=5)
+            exercise_level = st.selectbox("Exercise Level", options['Exercise_Level'])
+            smoking_status = st.selectbox("Smoking Status", options['Smoking_Status'])
+
+        with history_col:
+            st.markdown("**Medical History**")
+            bp_history = st.selectbox("BP History", options['BP_History'])
+            medication = st.selectbox("Medication Status", options['Medication'])
+            family_history = st.selectbox("Family History", options['Family_History'])
+
+        st.divider()
+        submit_button = st.form_submit_button(label="RUN DIAGNOSTIC ANALYSIS", use_container_width=True)
+
+with col2:
+    st.subheader("Diagnostic Output")
+    
+    if submit_button:
+        try:
+            processed_bp_history = label_encoders['BP_History'].transform([bp_history])[0]
+            processed_medication = label_encoders['Medication'].transform([medication])[0]
+            processed_family_history = label_encoders['Family_History'].transform([family_history])[0]
+            processed_exercise_level = label_encoders['Exercise_Level'].transform([exercise_level])[0]
+            processed_smoking_status = label_encoders['Smoking_Status'].transform([smoking_status])[0]
+
+            expected_features = [
+                'Age', 'Salt_Intake', 'Stress_Score', 'Sleep_Duration', 'BMI',
+                'Family_History', 'Smoking_Status', 'bp_History', 'medication', 'exercise_Level'
+            ]
+            
+            input_values = [
+                age, salt_intake, stress_score, sleep_duration, bmi,
+                processed_family_history, processed_smoking_status, processed_bp_history, 
+                processed_medication, processed_exercise_level
+            ]
+            
+            input_df = pd.DataFrame([input_values], columns=expected_features)
+            prediction = model.predict(input_df)[0]
+            
+            if prediction == 1:
+                st.markdown('<div class="alert-overlay blink-red"></div>', unsafe_allow_html=True)
+                st.error("### Diagnostic Alert\nPatient is likely to have Hypertension. Recommend immediate clinical review.")
+            else:
+                st.markdown('<div class="alert-overlay blink-green"></div>', unsafe_allow_html=True)
+                st.success("### Diagnostic Clear\nPatient is not likely to have Hypertension. Continue standard care.")
+
+        except Exception as e:
+            st.error(f"Error processing input: {str(e)}")
+    else:
+        st.info("Awaiting input. Fill out the form on the left and run the analysis to view results.")
